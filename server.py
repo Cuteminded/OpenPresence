@@ -86,7 +86,8 @@ class DiscordPresence:
         started_at = metadata.get("startTimestamp")
         event_time = payload.get("time", int(time.time() * 1000)) / 1000
         started_at = int(event_time - current_time)
-        print(f"[{event}] Updating Discord Rich Presence for {player_name}: {track} by {artist}")
+        if event.lower() in {"nowplaying", "resumedplaying"}:
+            print(f"[{event}] for {player_name}: {track} by {artist}")
 
         presence: dict[str, Any] = {
             "activity_type": ActivityType(activity_type),
