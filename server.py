@@ -135,6 +135,7 @@ class DiscordPresence:
             return
 
         if self.connected:
+            self.client.clear()
             self.client.close()
 
         self.client_id = client_id
@@ -198,6 +199,12 @@ def create_app() -> Flask:
                 print(f"Ignoring Web Scrobbler event: {event_name or 'missing eventName'}")
         except Exception as error:
             print(f"Discord Rich Presence update failed: {error}")
+            if discord:
+                try:
+                    discord.clear()
+                    print("Cleared Discord Rich Presence after failed update")
+                except Exception as clear_error:
+                    print(f"Could not clear Discord Rich Presence: {clear_error}")
         return jsonify(success=True, eventName=event_name)
     return app
 
@@ -209,6 +216,8 @@ def run_server() -> None:
 
 def start_background() -> None:
     command = [sys.executable, "-u", str(Path(__file__).resolve()), "--serve"]
+    environment = os.environ.copy()
+    environment["PYTHONIOENCODING"] = "utf-8"
     flags = 0
     if os.name == "nt":
         flags = (
@@ -225,6 +234,7 @@ def start_background() -> None:
             stdout=log_file,
             stderr=log_file,
             creationflags=flags,
+            env=environment,
             start_new_session=os.name != "nt",
         )
 
@@ -233,6 +243,10 @@ def start_background() -> None:
 
 
 def main() -> None:
+    for output in (sys.stdout, sys.stderr):
+        if hasattr(output, "reconfigure"):
+            output.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(description="Web Scrobbler Discord Rich Presence")
     parser.add_argument("--background", action="store_true", help="run detached")
     parser.add_argument("--serve", action="store_true", help=argparse.SUPPRESS)
