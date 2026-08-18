@@ -111,7 +111,7 @@ class DiscordPresence:
                 presence["small_image"] = ("https://www.google.com/s2/favicons"f"?sz=64&domain={quote(domain)}")
                 presence["small_text"] = player_name
 
-        track_url = metadata.get("trackUrl")
+        track_url = "https://www.youtube.com/results?search_query={0}".format(f"{track}+-+{artist}".replace(" ", "+"))
         if track_url:
             presence["buttons"] = [{"label": "View track", "url": track_url}]
 
