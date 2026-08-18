@@ -37,9 +37,8 @@ def get_player_settings(player_name: str) -> tuple[str, bool, int]:
     with CONFIG_LOCK:
         custom_client_ids = CONFIG.setdefault("web_scrobbler", {}).setdefault("custom_client_ids", {})
         if player_name not in custom_client_ids:
-            custom_client_ids[player_name] = {"client_id": "","activity_type": 0}
+            custom_client_ids[player_name] = {"client_id": "","activity_type": 2}
             CONFIG_FILE.write_text(json.dumps(CONFIG, indent=2, ensure_ascii=False) + "\n",encoding="utf-8")
-            print(f"Added Web Scrobbler player to config: {player_name}")
 
         player_config = custom_client_ids[player_name]
         if not isinstance(player_config, dict):
@@ -71,7 +70,7 @@ class DiscordPresence:
         with self.lock:
             self._ensure_connected()
 
-    def update(self, payload: dict[str, Any]) -> None:
+    def update(self, payload: dict[str, Any], event: str = "missing_eventName") -> None:
         song = payload["data"]["song"]
         parsed = song["parsed"]
         metadata = song.get("metadata", {})
@@ -85,12 +84,9 @@ class DiscordPresence:
         duration = parsed.get("duration")
         current_time = parsed.get("currentTime") or 0
         started_at = metadata.get("startTimestamp")
-
-        if payload.get("eventName", "").lower() == "resumedplaying":
-            event_time = payload.get("time", int(time.time() * 1000)) / 1000
-            started_at = int(event_time - current_time)
-        elif not started_at:
-            started_at = int(time.time() - current_time)
+        event_time = payload.get("time", int(time.time() * 1000)) / 1000
+        started_at = int(event_time - current_time)
+        print(f"[{event}] Updating Discord Rich Presence for {player_name}: {track} by {artist}")
 
         presence: dict[str, Any] = {
             "activity_type": ActivityType(activity_type),
@@ -143,13 +139,10 @@ class DiscordPresence:
         self.client_id = client_id
         self.client = Presence(client_id)
         self.connected = False
-        print(f"Using Discord application with client ID {client_id}")
-
 
 def create_discord_presence() -> DiscordPresence | None:
     discord_config = CONFIG["discord"]
     if not discord_config["enabled"]:
-        print("Discord Rich Presence is disabled")
         return None
 
     client_id = os.getenv("DISCORD_CLIENT_ID") or discord_config["client_id"]
@@ -191,7 +184,7 @@ def create_app() -> Flask:
         try:
             if event_name in PLAYING_EVENTS:
                 if discord:
-                    discord.update(payload)
+                    discord.update(payload,event_name)
             elif event_name in PAUSED_EVENTS:
                 if discord and CONFIG["discord"]["clear_on_pause"]:
                     discord.clear()
