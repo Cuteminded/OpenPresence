@@ -1,0 +1,16 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "webhook_file": "webhook.json",
+    "log_file": "server.log"
+  },
+  "discord": {
+    "enabled": true,
+    "client_id": "YOUR_DISCORD_APPLICATION_ID",
+    "clear_on_pause": true
+  },
+  "web_scrobbler": {
+    "custom_client_ids": {}
+  }
+}
