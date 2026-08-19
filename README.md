@@ -1,6 +1,6 @@
 # OpenPresence
 
-OpenPresence turns playback events from [Web Scrobbler](https://webscrobbler.com) into Discord Rich Presence.
+OpenPresence turns media player events into Discord Rich Presence. It accepts a generic JSON format and includes an adapter for [Web Scrobbler](https://webscrobbler.com).
 
 It runs a small local webhook server. When Web Scrobbler reports a track, OpenPresence sends its title, artist, album art, playback time, and player name to Discord. Pausing or stopping playback can clear the activity.
 
@@ -66,9 +66,7 @@ The example configuration contains these settings:
     "client_id": "YOUR_DISCORD_APPLICATION_ID",
     "clear_on_pause": true
   },
-  "web_scrobbler": {
-    "custom_client_ids": {}
-  }
+  "players": {}
 }
 ```
 
@@ -90,10 +88,10 @@ The example configuration contains these settings:
 
 ### Player-specific Discord applications
 
-OpenPresence can use a different Discord application for each player. When it sees a new player name, it adds an entry to `web_scrobbler.custom_client_ids` in `config.json`:
+OpenPresence can use a different Discord application for each player. When it sees a new player name, it adds an entry to `players` in `config.json`:
 
 ```json
-"custom_client_ids": {
+"players": {
   "YouTube Music": {
     "client_id": "",
     "activity_type": 2
@@ -104,7 +102,7 @@ OpenPresence can use a different Discord application for each player. When it se
 An empty `client_id` uses the default Discord application. Add another application ID to use it for that player:
 
 ```json
-"custom_client_ids": {
+"players": {
   "YouTube Music": {
     "client_id": "PLAYER_SPECIFIC_APPLICATION_ID",
     "activity_type": 2
@@ -143,7 +141,39 @@ Change the host or port in this URL if Web Scrobbler connects from another devic
 
 Playing and resumed events update Discord Rich Presence. Pause and stop events clear it when `clear_on_pause` is enabled. OpenPresence saves unrecognized events as `<event_name>.json` in the project directory so you can inspect them.
 
-The "View track" button in Discord opens a YouTube search for the current title and artist.
+The "View media" button opens the supplied media URL. If the event has no media URL, it opens a YouTube search for the current title and artist.
+
+## Connect another media player
+
+Any program that can send an HTTP request can use `POST /media`. Send a JSON object with a playback `state` and any available metadata:
+
+```json
+{
+  "state": "playing",
+  "title": "A track",
+  "artist": "An artist",
+  "album": "An album",
+  "artwork_url": "https://example.com/cover.jpg",
+  "source_name": "Desktop player",
+  "source_url": "https://player.example",
+  "media_url": "https://player.example/tracks/123",
+  "duration": 240,
+  "position": 30,
+  "timestamp": 1787148000
+}
+```
+
+`state` must be `playing`, `paused`, or `stopped`. OpenPresence updates Discord for `playing`. It clears the activity for `paused` and `stopped` when `clear_on_pause` is enabled.
+
+All other fields are optional. `duration` and `position` use seconds. `timestamp` is the Unix time when the player produced the event.
+
+Example request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/media \
+  -H "Content-Type: application/json" \
+  -d '{"state":"playing","title":"A track","artist":"An artist","source_name":"My player"}'
+```
 
 ## Run in the background
 
@@ -169,14 +199,21 @@ kill PROCESS_ID
 
 ## HTTP routes
 
+### `POST /media`
+
+Accepts generic media events.
+
 ### `POST /scrobbler`
 
-Accepts Web Scrobbler JSON events and updates or clears Discord Rich Presence.
+Specifically made for [Web Scrobbler](https://webscrobbler.com) events.
+
 
 ### `POST /file`
 
-Writes the raw request body to the configured `webhook_file`. Each request replaces the existing file.
+Writes the raw request body to the configured `webhook_file`. Each request replaces the existing file. (Useful for debugging or implementing a custom adapter.)
 
 ## What's next
 
-OpenPresence currently only supports Web Scrobbler. Support for other scrobblers and media players may be added in future releases. To request support for a specific player, open an issue. Pull requests are welcome too.
+OpenPresence currently only supports direct mapping of [Web Scrobbler](https://webscrobbler.com) to Discord. Support for other scrobblers and media players may be added in future releases. 
+
+To request support for a specific player, open an issue or add your own adapter and submit a pull request.

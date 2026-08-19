@@ -10,7 +10,5 @@
     "client_id": "YOUR_DISCORD_APPLICATION_ID",
     "clear_on_pause": true
   },
-  "web_scrobbler": {
-    "custom_client_ids": {}
-  }
+  "players": {}
 }
