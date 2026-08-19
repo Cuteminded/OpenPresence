@@ -156,6 +156,7 @@ Any program that can send an HTTP request can use `POST /media`. Send a JSON obj
   "artwork_url": "https://example.com/cover.jpg",
   "source_name": "Desktop player",
   "source_url": "https://player.example",
+  "media_label": "View track",
   "media_url": "https://player.example/tracks/123",
   "duration": 240,
   "position": 30,

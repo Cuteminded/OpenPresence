@@ -24,7 +24,7 @@ def parse_web_scrobbler(payload: dict[str, Any]) -> MediaEvent | None:
         artwork_url=parsed.get("trackArt") or metadata.get("trackArtUrl"),
         source_name=metadata.get("label") or connector.get("label") or "Web Scrobbler",
         source_url=parsed.get("originUrl"),
-        media_url=parsed.get("url"),
+        media_label="View media",
         duration=_optional_number(parsed.get("duration")),
         position=_number(parsed.get("currentTime"), 0),
         timestamp=_number(payload.get("time"), time.time() * 1000) / 1000,

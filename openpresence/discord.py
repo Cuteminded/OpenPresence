@@ -68,7 +68,10 @@ def build_presence(event: MediaEvent, activity_type: int, custom_client: bool) -
         if domain:
             presence["small_image"] = f"https://www.google.com/s2/favicons?sz=64&domain={quote(domain)}"
             presence["small_text"] = event.source_name
-    presence["buttons"] = [{"label": "View media", "url": _youtube_search_url(event)}]
+    if event.media_url:
+        presence["buttons"] = [{"label": event.media_label, "url": event.media_url}]
+    else:
+        presence["buttons"] = [{"label": event.media_label, "url": _youtube_search_url(event)}]
     return presence
 
 

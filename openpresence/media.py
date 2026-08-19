@@ -19,6 +19,7 @@ class MediaEvent:
     source_name: str = "Unknown player"
     source_url: str | None = None
     media_url: str | None = None
+    media_label: str = "View"
     duration: float | None = None
     position: float = 0
     timestamp: float | None = None
@@ -38,6 +39,7 @@ class MediaEvent:
             source_name=str(payload.get("source_name") or "Unknown player"),
             source_url=_text(payload.get("source_url")),
             media_url=_text(payload.get("media_url")),
+            media_label=str(payload.get("media_label") or "View"),
             duration=_number(payload.get("duration")),
             position=_number(payload.get("position")) or 0,
             timestamp=_number(payload.get("timestamp")),
