@@ -1,62 +1,62 @@
 # OpenPresence
 
-A small Flask webhook server that publishes Web Scrobbler playback data as Discord Rich Presence. It supports player-specific Discord applications, album artwork, playback timestamps, track links, pause events, and detached background operation.
+OpenPresence turns playback events from [Web Scrobbler](https://webscrobbler.com) into Discord Rich Presence.
+
+It runs a small local webhook server. When Web Scrobbler reports a track, OpenPresence sends its title, artist, album art, playback time, and player name to Discord. Pausing or stopping playback can clear the activity.
 
 ## Requirements
 
 - Python 3.10 or newer
-- Windows, macOS, or Linux
-- Discord Desktop running on the same computer
-- A Discord application ID
-- [The Web Scrobbler browser extension](https://webscrobbler.com)
+- Discord running on the same computer as OpenPresence
+- A [Discord application](https://discord.com/developers/applications)
+- The [Web Scrobbler browser extension](https://webscrobbler.com)
 
-## Setup
+## Install
 
-1. Clone the repository and enter its directory.
-2. Create a virtual environment.
+Clone the repository, open its directory, and create a virtual environment.
 
-   Windows PowerShell:
+On Windows PowerShell:
 
-   ```powershell
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   ```
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-   macOS or Linux:
+On macOS or Linux:
 
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-3. Install the dependencies:
+Install the dependencies:
 
-   ```text
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-4. Copy the example configuration:
+Copy the example configuration:
 
-   Windows PowerShell:
+```powershell
+# Windows PowerShell
+Copy-Item config.example.json config.json
+```
 
-   ```powershell
-   Copy-Item config.example.json config.json
-   ```
+```bash
+# macOS or Linux
+cp config.example.json config.json
+```
 
-   macOS or Linux:
+Open `config.json` and replace `YOUR_DISCORD_APPLICATION_ID` with the application ID from the Discord Developer Portal.
 
-   ```bash
-   cp config.example.json config.json
-   ```
+## Configure
 
-5. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications) and put its application ID in `discord.client_id`.
-
-## Configuration
+The example configuration contains these settings:
 
 ```json
 {
   "server": {
-    "host": "127.0.0.1",
+    "host": "0.0.0.0",
     "port": 8000,
     "webhook_file": "webhook.json",
     "log_file": "server.log"
@@ -72,57 +72,90 @@ A small Flask webhook server that publishes Web Scrobbler playback data as Disco
 }
 ```
 
-Use `127.0.0.1` to accept requests only from the local computer. Use `0.0.0.0` only when another device must reach the server and the network is trusted.
+### Server settings
 
-The `DISCORD_CLIENT_ID` environment variable can override the default client ID.
+`host` controls which network interfaces accept webhook requests. Change it to `127.0.0.1` when Web Scrobbler and OpenPresence run on the same computer. Keep `0.0.0.0` only when another device needs to reach the server on a trusted network.
+
+`port` is the HTTP port used by the webhook server. The default is `8000`.
+
+`webhook_file` is where requests to `/file` are stored. `log_file` receives output when OpenPresence runs in the background.
+
+### Discord settings
+
+`enabled` turns Discord Rich Presence updates on or off.
+
+`client_id` is the default Discord application ID. You can override it with the `DISCORD_CLIENT_ID` environment variable.
+
+`clear_on_pause` clears the current Discord activity when Web Scrobbler reports a pause or stop event.
 
 ### Player-specific Discord applications
 
-When Web Scrobbler reports a new `metadata.label`, the server automatically adds it to `web_scrobbler.custom_client_ids` with an empty value:
+OpenPresence can use a different Discord application for each player. When it sees a new player name, it adds an entry to `web_scrobbler.custom_client_ids` in `config.json`:
 
 ```json
 "custom_client_ids": {
   "YouTube Music": {
     "client_id": "",
-    "activity_type": 0
+    "activity_type": 2
   }
 }
 ```
 
-An empty `client_id` uses the default Discord application. Set a different application ID to use a player-specific application:
+An empty `client_id` uses the default Discord application. Add another application ID to use it for that player:
 
 ```json
 "custom_client_ids": {
   "YouTube Music": {
     "client_id": "PLAYER_SPECIFIC_APPLICATION_ID",
-    "activity_type": 0
+    "activity_type": 2
   }
 }
 ```
 
-The small player favicon is hidden when a player-specific Discord application is active.
+The supported activity types are:
 
-Supported activity types are `0` (Playing), `2` (Listening), `3` (Watching), and `5` (Competing). The default and fallback value is `0`.
+| Value | Discord activity |
+| ---: | --- |
+| `0` | Playing |
+| `2` | Listening |
+| `3` | Watching |
+| `5` | Competing |
 
-## Running the server
+Invalid values fall back to `0`. OpenPresence omits the small player favicon when it uses a player-specific application.
 
-Run in the current terminal:
+## Connect Web Scrobbler
 
-```text
+Start OpenPresence in the current terminal:
+
+```bash
 python server.py
 ```
 
-Run as a detached background process:
+If your system uses `python3` for Python 3, run `python3 server.py` instead.
+
+In Web Scrobbler, add a webhook account and set its API URL to:
 
 ```text
+http://127.0.0.1:8000/scrobbler
+```
+
+Change the host or port in this URL if Web Scrobbler connects from another device or you changed the server configuration.
+
+Playing and resumed events update Discord Rich Presence. Pause and stop events clear it when `clear_on_pause` is enabled. OpenPresence saves unrecognized events as `<event_name>.json` in the project directory so you can inspect them.
+
+The "View track" button in Discord opens a YouTube search for the current title and artist.
+
+## Run in the background
+
+Start a detached process:
+
+```bash
 python server.py --background
 ```
 
-On systems where Python 3 is exposed as `python3`, use that command instead of `python`.
+The command prints the process ID. OpenPresence writes output to the configured log file.
 
-The background command prints its process ID. Output is written to the configured `server.log` file.
-
-Stop it on Windows PowerShell:
+Stop the process on Windows PowerShell:
 
 ```powershell
 Stop-Process -Id PROCESS_ID
@@ -134,22 +167,12 @@ Stop it on macOS or Linux:
 kill PROCESS_ID
 ```
 
-## Web Scrobbler setup
-
-Add a webhook account in Web Scrobbler and use this API URL:
-
-```text
-http://127.0.0.1:8000/scrobbler
-```
-
-The server handles common playing, resumed, paused, and stopped events. Unknown events are accepted and saved as `<event_name>.json` for inspection.
-
-## Routes
+## HTTP routes
 
 ### `POST /scrobbler`
 
-Receives Web Scrobbler events and updates or clears Discord Rich Presence.
+Accepts Web Scrobbler JSON events and updates or clears Discord Rich Presence.
 
 ### `POST /file`
 
-Overwrites the configured webhook file with the raw request body.
+Writes the raw request body to the configured `webhook_file`. Each request replaces the existing file.
