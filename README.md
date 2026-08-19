@@ -176,3 +176,7 @@ Accepts Web Scrobbler JSON events and updates or clears Discord Rich Presence.
 ### `POST /file`
 
 Writes the raw request body to the configured `webhook_file`. Each request replaces the existing file.
+
+## What's next
+
+OpenPresence currently only supports Web Scrobbler. Support for other scrobblers and media players may be added in future releases. To request support for a specific player, open an issue. Pull requests are welcome too.
