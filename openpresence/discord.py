@@ -86,9 +86,9 @@ def create_discord_presence() -> DiscordPresence | None:
     discord = DiscordPresence(client_id)
     try:
         discord.connect()
-        print("Connected to Discord")
     except Exception as error:
-        print(f"Could not connect to Discord: {error}")
+        raise RuntimeError(f"Could not connect to Discord: {error}") from error
+    print("Connected to Discord")
     return discord
 
 
