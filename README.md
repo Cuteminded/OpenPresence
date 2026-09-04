@@ -59,7 +59,8 @@ The example configuration contains these settings:
     "host": "0.0.0.0",
     "port": 8000,
     "webhook_file": "webhook.json",
-    "log_file": "server.log"
+    "log_file": "server.log",
+    "notifications": true
   },
   "discord": {
     "enabled": true,
@@ -77,6 +78,8 @@ The example configuration contains these settings:
 `port` is the HTTP port used by the webhook server. The default is `8000`.
 
 `webhook_file` is where requests to `/file` are stored. `log_file` receives output when OpenPresence runs in the background.
+
+`notifications` controls desktop notifications for startup errors. It defaults to `true` when the setting is missing. Set it to `false` to disable OS notifications.
 
 ### Discord settings
 
@@ -185,6 +188,7 @@ python server.py --background
 ```
 
 The command prints the process ID. OpenPresence writes output to the configured log file.
+If OpenPresence cannot connect to Discord during startup, it sends a desktop notification and then exits. This also applies when it runs in the foreground. Notifications use the native notification system on Windows, macOS, and Linux.
 
 Stop the process on Windows PowerShell:
 
